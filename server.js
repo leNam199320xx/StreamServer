@@ -1,4 +1,5 @@
 const http = require('http');
+const fs = require('fs');
 const ffmpeg = require('ffmpeg');
 const spawn = require('child_process').spawn;
 const express = require('express');
@@ -27,6 +28,20 @@ app.get('/', (request, response) => {
     console.log(`URL: ${request.url}`);
     response.send('Hello, Server!');
 
+});
+
+
+app.get('/schedule', (request, response) => {
+    console.log(`URL: ${request.url}`);
+    response.setHeader('Content-Type', 'application/json');
+    response.end(JSON.stringify(schedules.map((sch) => {
+        return {
+            id: sch.id,
+            videoName: sch.videoName,
+            date: sch.date,
+            isRunning: sch.isRunning
+        }
+    })));
 });
 
 
@@ -66,28 +81,36 @@ function addSchedule(id, streamPath, startDateStr, endDateStr) {
     var endDate = new Date(endDateStr);
     var videoName = "video_" + dateFormater.format(startDate, "YYYYMMDDHHmmss");
     var timeMs = endDate - startDate;
+    var res = {
+        id,
+        videoName,
+        schedule,
+        date: dateFormater.format(startDate, "YYYYMMDD"),
+        isRunning: true
+    };
+    var dir = './videos/' + dateFormater.format(startDate, "YYYYMMDD");
+    console.log(dir);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir);
+    }
+
     const job = schedule.scheduleJob(videoName, {
         start: startDate,
         end: endDate,
         rule: '* * * * * *'
     }, function () {
-        console.log("record video " + videoName);
-        downloadBasic(timeMs, videoName, streamPath);
+        downloadBasic(timeMs, dir + "/" + videoName, streamPath);
         schedule.cancelJob(videoName);
     }, function () {
+        res.isRunning = false;
         console.log("stop");
     });
 
-    return {
-        id,
-        videoName,
-        schedule
-    }
+    return res;
 }
 
 
 function downloadBasic(time, name, streamPath) {
-    console.log("start download " + name);
     var cmd = 'ffmpeg';
     var args = [
         '-y',
@@ -99,7 +122,7 @@ function downloadBasic(time, name, streamPath) {
         '-r', '25',
         // '-b:v', '1000k',
         '-c:v', 'h264',
-        '-f', 'mp4', "videos/" + name + '.mp4'
+        '-f', 'mp4', name + '.mp4'
     ];
 
     var proc = spawn(cmd, args);
