@@ -112,11 +112,12 @@ function addSchedule(id, streamPath, startDateStr, endDateStr) {
 
 function downloadBasic(time, name, streamPath) {
     var cmd = 'ffmpeg';
+    var videoSize = "640x480";
     var args = [
         '-y',
         '-t', time + 'ms',
         '-i', streamPath, // 'http://203.162.235.67/streams/media/nhkw_1920x1080/index.m3u8',
-        '-s', '1920x1080',
+        '-s', videoSize,
         '-codec:a', 'aac',
         '-b:a', '44.1k',
         '-r', '25',
