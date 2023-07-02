@@ -4,12 +4,13 @@ const ffmpeg = require('ffmpeg');
 const spawn = require('child_process').spawn;
 const express = require('express');
 const bodyParser = require('body-parser');
-var cron = require('node-cron');
-var schedule = require('node-schedule');
 const { join } = require('path');
-var port = 3000;
+const cron = require('node-cron');
+const schedule = require('node-schedule');
+const request = require('request');
 const dateFormater = require('date-and-time')
 var schedules = [];
+const port = 3000;
 
 
 const app = express();
@@ -38,18 +39,29 @@ app.get('/schedule', (request, response) => {
         return {
             id: sch.id,
             videoName: sch.videoName,
-            date: sch.date,
-            isRunning: sch.isRunning
+            date: sch.date
         }
     })));
 });
 
+/**
+ * api config schedule run sequence once day once time 
+ * this api will call api add to db and set new date with new list of broadcast
+ */
+app.post('/schedule/config-auto', (request, response) => {
 
+
+});
+
+/**
+ * add new schedule create video with broadcast url and time
+ */
 app.post('/schedule/add', (request, response) => {
     console.log(`URL: ${request.url}`);
     console.log(request.body);
     var sch = addSchedule(
         request.body.id,
+        request.body.channel,
         request.body.streamPath,
         request.body.startDate,
         request.body.endDate);
@@ -69,7 +81,7 @@ var regOnlyNumber = new RegExp(/[^0-9]/gm);
  * @param {*} endDateStr end date 2019-01-01T00:00:00
  * @returns 
  */
-function addSchedule(id, streamPath, startDateStr, endDateStr) {
+function addSchedule(id, channel, streamPath, startDateStr, endDateStr) {
     //2019-01-01T00:00:00
     if (!startDateStr
         || startDateStr == ''
@@ -86,10 +98,18 @@ function addSchedule(id, streamPath, startDateStr, endDateStr) {
         videoName,
         schedule,
         date: dateFormater.format(startDate, "YYYYMMDD"),
-        isRunning: true
+        added: false
     };
-    var dir = './videos/' + dateFormater.format(startDate, "YYYYMMDD");
-    console.log(dir);
+    var dir = './videos/' + channel + "/" + dateFormater.format(startDate, "YYYYMMDD");
+
+    if (!fs.existsSync('./videos/')) {
+        fs.mkdirSync('./videos/');
+    }
+
+    if (!fs.existsSync('./videos/' + channel)) {
+        fs.mkdirSync('./videos/' + channel);
+    }
+
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
@@ -99,20 +119,21 @@ function addSchedule(id, streamPath, startDateStr, endDateStr) {
         end: endDate,
         rule: '* * * * * *'
     }, function () {
-        downloadBasic(timeMs, dir + "/" + videoName, streamPath);
+        downloadBasic(timeMs, dir, streamPath, videoName);
         schedule.cancelJob(videoName);
     }, function () {
-        res.isRunning = false;
-        console.log("stop");
+        res.added = true;
+        console.log("add [" + videoName + "] to schedule successfully ");
     });
 
     return res;
 }
 
 
-function downloadBasic(time, name, streamPath) {
+function downloadBasic(time, dir, streamPath, videoName) {
     var cmd = 'ffmpeg';
     var videoSize = "640x480";
+    var name = dir + "/" + videoName;
     var args = [
         '-y',
         '-t', time + 'ms',
@@ -127,17 +148,25 @@ function downloadBasic(time, name, streamPath) {
     ];
 
     var proc = spawn(cmd, args);
+    var downloaderRunning = false;
 
     proc.stdout.on('data', function (data) {
-        //console.log(data);
+        if(!downloaderRunning){
+            console.log("dowwnload [" + name + "] running");
+            downloaderRunning = true;
+        }
     });
 
     proc.stderr.setEncoding("utf8")
     proc.stderr.on('data', function (data) {
-        //console.log(data);
+        if(!downloaderRunning){
+            console.log("download [" + name + "] running");
+            downloaderRunning = true;
+        }
     });
 
     proc.on('close', function () {
-        console.log('download finished');
+        console.log("download [" + name + "] successfully");
+        schedules = schedules.filter(m => m.added = false && m.videoName != videoName);
     });
 }

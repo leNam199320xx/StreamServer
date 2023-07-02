@@ -10,6 +10,7 @@
     "ffmpeg": "^0.0.4",
     "http": "^0.0.1-security",
     "node-cron": "^3.0.2",
-    "node-schedule": "^2.1.1"
+    "node-schedule": "^2.1.1",
+    "request": "^2.88.2"
   }
 }
