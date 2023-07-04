@@ -9,6 +9,7 @@ const schedule = require('node-schedule');
 const request = require('request');
 const dateFormater = require('date-and-time')
 var schedules = [];
+var files = [];
 const port = 3000;
 
 
@@ -68,6 +69,9 @@ app.post('/schedule/add', (request, response) => {
     if (sch != null) {
         schedules.push(sch);
     }
+    else {
+        console.log("existed");
+    }
     response.send(sch?.videoName);
 });
 
@@ -114,17 +118,27 @@ function addSchedule(id, channel, streamPath, startDateStr, endDateStr) {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
-    var id = channel+"_"+videoName;
-    const job = schedule.scheduleJob(id, {
+    var fileId = channel + "_" + videoName;
+    var rs = files.find(function (v) {
+        return v == fileId;
+    });
+
+
+    if (rs) {
+        return null;
+    }
+
+    files.push(fileId);
+    const job = schedule.scheduleJob(fileId, {
         start: startDate,
         end: endDate,
         rule: '* * * * * *'
     }, function () {
         downloadBasic(timeMs, dir, streamPath, videoName);
-        schedule.cancelJob(id);
+        schedule.cancelJob(fileId);
     }, function () {
         res.added = true;
-        console.log("["+channel+"] add [" + videoName + "] to schedule successfully ");
+        console.log("[" + channel + "] add [" + videoName + "] to schedule successfully ");
     });
 
     return res;
@@ -152,7 +166,7 @@ function downloadBasic(time, dir, streamPath, videoName) {
     var downloaderRunning = false;
 
     proc.stdout.on('data', function (data) {
-        if(!downloaderRunning){
+        if (!downloaderRunning) {
             console.log("dowwnload [" + name + "] running");
             downloaderRunning = true;
         }
@@ -160,7 +174,7 @@ function downloadBasic(time, dir, streamPath, videoName) {
 
     proc.stderr.setEncoding("utf8")
     proc.stderr.on('data', function (data) {
-        if(!downloaderRunning){
+        if (!downloaderRunning) {
             console.log("download [" + name + "] running");
             downloaderRunning = true;
         }
@@ -168,6 +182,6 @@ function downloadBasic(time, dir, streamPath, videoName) {
 
     proc.on('close', function () {
         console.log("download [" + name + "] successfully");
-        schedules = schedules.filter(m => m.added = false && m.videoName != videoName);
+        schedules = schedules.filter(m => m.added == false && m.videoName != videoName);
     });
 }
