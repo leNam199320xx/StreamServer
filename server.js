@@ -68,11 +68,12 @@ app.post('/schedule/add', (request, response) => {
         request.body.endDate);
     if (sch != null) {
         schedules.push(sch);
+        response.send(sch?.videoName);
     }
     else {
         console.log("existed");
+        response.status(422).send("schedule existed");
     }
-    response.send(sch?.videoName);
 });
 
 var regOnlyNumber = new RegExp(/[^0-9]/gm);
