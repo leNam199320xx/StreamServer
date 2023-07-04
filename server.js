@@ -38,6 +38,7 @@ app.get('/schedule', (request, response) => {
         return {
             id: sch.id,
             videoName: sch.videoName,
+            channel: sch.channel,
             date: sch.date
         }
     })));
@@ -94,6 +95,7 @@ function addSchedule(id, channel, streamPath, startDateStr, endDateStr) {
     var timeMs = endDate - startDate;
     var res = {
         id,
+        channel,
         videoName,
         schedule,
         date: dateFormater.format(startDate, "YYYYMMDD"),
@@ -112,17 +114,17 @@ function addSchedule(id, channel, streamPath, startDateStr, endDateStr) {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
-
-    const job = schedule.scheduleJob(videoName, {
+    var id = channel+"_"+videoName;
+    const job = schedule.scheduleJob(id, {
         start: startDate,
         end: endDate,
         rule: '* * * * * *'
     }, function () {
         downloadBasic(timeMs, dir, streamPath, videoName);
-        schedule.cancelJob(videoName);
+        schedule.cancelJob(id);
     }, function () {
         res.added = true;
-        console.log("add [" + videoName + "] to schedule successfully ");
+        console.log("["+channel+"] add [" + videoName + "] to schedule successfully ");
     });
 
     return res;
