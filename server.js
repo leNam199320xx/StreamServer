@@ -63,6 +63,8 @@ app.post('/schedule/add', (request, response) => {
     var sch = addSchedule(
         request.body.id,
         request.body.channel,
+        request.body.date,
+        request.body.fileName,
         request.body.streamPath,
         request.body.startDate,
         request.body.endDate);
@@ -86,7 +88,7 @@ var regOnlyNumber = new RegExp(/[^0-9]/gm);
  * @param {*} endDateStr end date 2019-01-01T00:00:00
  * @returns 
  */
-function addSchedule(id, channel, streamPath, startDateStr, endDateStr) {
+function addSchedule(id, channel, date, fileName , streamPath, startDateStr, endDateStr) {
     //2019-01-01T00:00:00
     if (!startDateStr
         || startDateStr == ''
@@ -96,17 +98,17 @@ function addSchedule(id, channel, streamPath, startDateStr, endDateStr) {
     }
     var startDate = new Date(startDateStr);
     var endDate = new Date(endDateStr);
-    var videoName = "video_" + dateFormater.format(startDate, "YYYYMMDDHHmmss");
+    var videoName = fileName;
     var timeMs = endDate - startDate;
     var res = {
         id,
         channel,
         videoName,
         schedule,
-        date: dateFormater.format(startDate, "YYYYMMDD"),
+        date,
         added: false
     };
-    var dir = './videos/' + channel + "/" + dateFormater.format(startDate, "YYYYMMDD");
+    var dir = './videos/' + channel + "/" + date;
 
     if (!fs.existsSync('./videos/')) {
         fs.mkdirSync('./videos/');
