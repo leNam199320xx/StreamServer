@@ -98,6 +98,8 @@ function addSchedule(id, channel, date, fileName , streamPath, startDateStr, end
     }
     var startDate = new Date(startDateStr);
     var endDate = new Date(endDateStr);
+    startDate = addMinutes(startDate, 3);
+    endDate = addMinutes(endDate, 3);
     var videoName = fileName;
     var timeMs = endDate - startDate;
     var res = {
@@ -147,7 +149,11 @@ function addSchedule(id, channel, date, fileName , streamPath, startDateStr, end
     return res;
 }
 
+function addMinutes(date, minutes) {
+  date.setMinutes(date.getMinutes() + minutes);
 
+  return date;
+}
 function downloadBasic(time, dir, streamPath, videoName) {
     var cmd = 'ffmpeg';
     var videoSize = "640x480";
