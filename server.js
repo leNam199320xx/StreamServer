@@ -77,6 +77,34 @@ app.post('/schedule/add', (request, response) => {
         response.status(422).send("schedule existed");
     }
 });
+app.post('/schedule/addMore', (request, response) => {
+    console.log(`URL: ${request.url}`);
+    if(Array.isArray(request.body)){
+    console.log(request.body.length);
+        for(var i = 0; i< request.body.length; i ++){
+            var b = request.body[i];
+            var sch = addSchedule(
+                b.id,
+                b.channel,
+                b.date,
+                b.fileName,
+                b.streamPath,
+                b.startDate,
+                b.endDate);
+            if (sch != null) {
+                schedules.push(sch);
+                response.send(sch?.videoName);
+            }
+            else {
+                console.log("existed");
+                response.status(422).send("schedule existed");
+            }
+        }
+    }
+    else{
+        response.status(500).send("body is not a array");
+    }
+});
 
 var regOnlyNumber = new RegExp(/[^0-9]/gm);
 
