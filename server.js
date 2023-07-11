@@ -11,7 +11,7 @@ const dateFormater = require('date-and-time')
 var schedules = [];
 var files = [];
 const port = 3000;
-
+var id = 0;
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -60,8 +60,9 @@ app.post('/schedule/config-auto', (request, response) => {
 app.post('/schedule/add', (request, response) => {
     console.log(`URL: ${request.url}`);
     console.log(request.body);
+    id += 1;
     var sch = addSchedule(
-        request.body.id,
+        id,
         request.body.channel,
         request.body.date,
         request.body.fileName,
@@ -123,7 +124,7 @@ function addSchedule(id, channel, date, fileName , streamPath, startDateStr, end
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
-    var fileId = channel + "_" + videoName;
+    var fileId = channel + "_" + videoName + "_" + id;
     var rs = files.find(function (v) {
         return v == fileId;
     });
