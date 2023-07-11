@@ -80,9 +80,10 @@ app.post('/schedule/add', (request, response) => {
 });
 app.post('/schedule/addMore', (request, response) => {
     console.log(`URL: ${request.url}`);
-    if(Array.isArray(request.body)){
-    console.log(request.body.length);
-        for(var i = 0; i< request.body.length; i ++){
+    if (Array.isArray(request.body)) {
+        console.log(request.body.length);
+        var messages = [];
+        for (var i = 0; i < request.body.length; i++) {
             var b = request.body[i];
             var sch = addSchedule(
                 b.id,
@@ -94,15 +95,15 @@ app.post('/schedule/addMore', (request, response) => {
                 b.endDate);
             if (sch != null) {
                 schedules.push(sch);
-                response.send(sch?.videoName);
+                messages.push(sch?.videoName);
             }
             else {
-                console.log("existed");
-                response.status(422).send("schedule existed");
+                messages.push("schedule existed");
             }
         }
+        response.send("success " + request.body.length);
     }
-    else{
+    else {
         response.status(500).send("body is not a array");
     }
 });
@@ -117,7 +118,7 @@ var regOnlyNumber = new RegExp(/[^0-9]/gm);
  * @param {*} endDateStr end date 2019-01-01T00:00:00
  * @returns 
  */
-function addSchedule(id, channel, date, fileName , streamPath, startDateStr, endDateStr) {
+function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endDateStr) {
     //2019-01-01T00:00:00
     if (!startDateStr
         || startDateStr == ''
@@ -129,8 +130,14 @@ function addSchedule(id, channel, date, fileName , streamPath, startDateStr, end
     var endDate = new Date(endDateStr);
     startDate = addMinutes(startDate, 3);
     endDate = addMinutes(endDate, 3);
+    //for testing
+    // console.log(startDate);
+    // console.log(endDate);
+    // startDate = new Date();
+    // endDate = addMinutes(new Date(), 1);
+
     var videoName = fileName;
-    var timeMs = endDate - startDate;
+    var timeMs = (endDate - startDate) / 1000;
     var res = {
         id,
         channel,
@@ -179,26 +186,24 @@ function addSchedule(id, channel, date, fileName , streamPath, startDateStr, end
 }
 
 function addMinutes(date, minutes) {
-  date.setMinutes(date.getMinutes() + minutes);
+    date.setMinutes(date.getMinutes() + minutes);
 
-  return date;
+    return date;
 }
 function downloadBasic(time, dir, streamPath, videoName) {
     var cmd = 'ffmpeg';
     var videoSize = "640x480";
     var name = dir + "/" + videoName;
+
     var args = [
         '-y',
-        '-t', time + 'ms',
-        '-i', streamPath, // 'http://203.162.235.67/streams/media/nhkw_1920x1080/index.m3u8',
-        '-s', videoSize,
-        '-codec:a', 'aac',
-        '-b:a', '44.1k',
-        '-r', '25',
-        // '-b:v', '1000k',
-        '-c:v', 'h264',
-        '-f', 'mp4', name + '.mp4'
+        '-i', streamPath,
+        '-t', time,
+        '-c', 'copy',
+        '-bsf:a', 'aac_adtstoasc',
+        name + '.mp4'
     ];
+
 
     var proc = spawn(cmd, args);
     var downloaderRunning = false;
