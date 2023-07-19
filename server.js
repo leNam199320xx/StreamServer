@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const spawn = require('child_process').spawn;
 const express = require('express');
@@ -8,9 +9,15 @@ const cron = require('node-cron');
 const schedule = require('node-schedule');
 const request = require('request');
 const dateFormater = require('date-and-time')
+
+const config = require('dotenv').config();
+console.log(config);
 var schedules = [];
+var currentDateJob = "";
 var files = [];
-const port = 3000;
+const port = process.env.PORT;
+const keepDay = process.env.VIDEO_KEEP_DAY;
+
 var id = 0;
 
 const app = express();
@@ -35,23 +42,7 @@ app.get('/', (request, response) => {
 app.get('/schedule', (request, response) => {
     console.log(`URL: ${request.url}`);
     response.setHeader('Content-Type', 'application/json');
-    response.end(JSON.stringify(schedules.map((sch) => {
-        return {
-            id: sch.id,
-            videoName: sch.videoName,
-            channel: sch.channel,
-            date: sch.date
-        }
-    })));
-});
-
-/**
- * api config schedule run sequence once day once time 
- * this api will call api add to db and set new date with new list of broadcast
- */
-app.post('/schedule/config-auto', (request, response) => {
-
-
+    response.end(schedules);
 });
 
 /**
@@ -62,7 +53,7 @@ app.post('/schedule/add', (request, response) => {
     console.log(request.body);
     id += 1;
     var sch = addSchedule(
-        id,
+        request.body.id,
         request.body.channel,
         request.body.date,
         request.body.fileName,
@@ -70,7 +61,7 @@ app.post('/schedule/add', (request, response) => {
         request.body.startDate,
         request.body.endDate);
     if (sch != null) {
-        schedules.push(sch);
+        schedules.push(request.body.id);
         response.send(sch?.videoName);
     }
     else {
@@ -94,7 +85,7 @@ app.post('/schedule/addMore', (request, response) => {
                 b.startDate,
                 b.endDate);
             if (sch != null) {
-                schedules.push(sch);
+                schedules.push(b.id);
                 messages.push(sch?.videoName);
             }
             else {
@@ -107,9 +98,110 @@ app.post('/schedule/addMore', (request, response) => {
         response.status(500).send("body is not a array");
     }
 });
-
+app.post('/schedule/start', (request, response) => {
+    console.log(`URL: ${request.url}`);
+    getSchedules();
+    response.send("force start " + request.body.length);
+   
+});
 var regOnlyNumber = new RegExp(/[^0-9]/gm);
 
+const rule = new schedule.RecurrenceRule();
+rule.hour = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[0]);
+rule.minute = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[1]);
+rule.second = 0;
+getSchedules();
+const job = schedule.scheduleJob("getSchedules", rule, function () {
+    getSchedules();
+}, function (e) {
+    console.log("get schedules!");
+    console.log(e);
+});
+
+function deleteFolderOld(channel) {
+    var keepFolders = [];
+    var dirs = fs.readdirSync('./videos/' + channel);
+    for (var i = 0; i < keepDay; i++) {
+        var rmDate = dateFormater.addDays(new Date(), -i);
+        var dateStr = dateFormater.format(rmDate, "YYYYMMDD");
+        keepFolders.push(dateStr);
+    }
+    for (var i = 0; i < dirs.length; i++) {
+        var dir = './videos/' + channel + "/" + dirs[i];
+        var isKeepDir = keepFolders.filter((e) => { return e == dirs[i]; }).length > 0;
+        if (!isKeepDir && fs.existsSync(dir)) {
+            console.log(">>>remove dir: " + dir);
+            fs.rmSync(dir, { force: true, recursive: true });
+        }
+    }
+}
+
+function getSchedules() {
+    var data = '';
+    var currentDate = new Date();
+    currentDate = dateFormater.addDays(currentDate, 1);
+    currentDateJob = dateFormater.format(currentDate, "YYYY-MM-DD");
+    console.log("run at: " + currentDate);
+    console.log("for date: " + currentDateJob);
+    schedules = [];
+    var postData = JSON.stringify({
+        model: { BroadcastName: currentDateJob }
+    });
+
+    var options = {
+        hostname: 'localhost',
+        port: 7133,
+        path: '/api/BroadcastSchedule/GetBroadCastsForJob',
+        method: 'POST',
+        headers: {
+            'accept': '*/*',
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData),
+        },
+    };
+    var _http = http;
+    if (process.env.CMS_USE_SSL == "1") {
+        _http = https;
+    }
+    var request = _http.request(options, (response) => {
+
+        // Set the encoding, so we don't get log to the console a bunch of gibberish binary data
+        response.setEncoding('utf8');
+        // As data starts streaming in, add each chunk to "data"
+        response.on('data', (chunk) => {
+            data += chunk;
+        });
+        // The whole response has been received. Print out the result.
+        response.on('end', () => {
+            // console.log(data);
+            var arr = JSON.parse(data);
+            if (arr.length > 0) {
+                for (var i = 0; i < arr.length; i++) {
+                    var sch = addSchedule(
+                        arr[i].id,
+                        arr[i].channel,
+                        arr[i].date,
+                        arr[i].fileName,
+                        arr[i].streamPath,
+                        arr[i].startDate,
+                        arr[i].endDate);
+                    deleteFolderOld(arr[i].channel);
+                    schedules.push(arr[i].id);
+                }
+            }
+        });
+    });
+
+    request.on('error', (error) => {
+        console.error("error");
+        console.error(error);
+    });
+
+    request.write(postData);
+
+    // End the request
+    request.end();
+}
 /**
  * 
  * @param {*} id id
@@ -120,10 +212,12 @@ var regOnlyNumber = new RegExp(/[^0-9]/gm);
  */
 function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endDateStr) {
     //2019-01-01T00:00:00
+    var exist = schedules.filter((e) => { return e == id; }).length > 0;
     if (!startDateStr
         || startDateStr == ''
         || !endDateStr
-        || endDateStr == '') {
+        || endDateStr == ''
+        || exist) {
         return null
     }
     var startDate = new Date(startDateStr);
@@ -160,6 +254,7 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
         fs.mkdirSync(dir);
     }
     var fileId = channel + "_" + videoName + "_" + id;
+    console.log(fileId);
     var rs = files.find(function (v) {
         return v == fileId;
     });
@@ -192,7 +287,6 @@ function addMinutes(date, minutes) {
 }
 function downloadBasic(time, dir, streamPath, videoName) {
     var cmd = 'ffmpeg';
-    var videoSize = "640x480";
     var name = dir + "/" + videoName;
 
     var args = [
