@@ -179,6 +179,9 @@ function getSchedules() {
         // The whole response has been received. Print out the result.
         response.on('end', () => {
             // console.log(data);
+            if(data.length == 0){
+                return;
+            }
             var arr = JSON.parse(data);
             if (arr.length > 0) {
                 for (var i = 0; i < arr.length; i++) {
