@@ -5,7 +5,6 @@ const spawn = require('child_process').spawn;
 const express = require('express');
 const bodyParser = require('body-parser');
 const { join } = require('path');
-const cron = require('node-cron');
 const schedule = require('node-schedule');
 const request = require('request');
 const dateFormater = require('date-and-time')
@@ -22,6 +21,7 @@ console.log("VIDEO_KEEP_DAY=", process.env.VIDEO_KEEP_DAY);
 var schedules = [];
 var currentDateJob = "";
 var files = [];
+console.log(sch);
 
 var id = 0;
 
@@ -31,7 +31,7 @@ app.use(bodyParser.json());
 app.use('/videos', express.static(join(__dirname, 'videos')));
 
 // Start the server 
-const server = app.listen(port, (error) => {
+const server = app.listen(process.env.PORT, (error) => {
     if (error)
         return console.log(`Error: ${error}`);
     console.log(`Server listening on port ${server.address().port}`);
@@ -40,19 +40,14 @@ const server = app.listen(port, (error) => {
 app.get('/', (request, response) => {
     console.log(`URL: ${request.url}`);
     response.send('Hello, Server!');
-
 });
-
 
 app.get('/schedule', (request, response) => {
     console.log(`URL: ${request.url}`);
     response.setHeader('Content-Type', 'application/json');
-    response.end(schedules);
+    response.end(JSON.stringify(schedules));
 });
 
-/**
- * add new schedule create video with broadcast url and time
- */
 app.post('/schedule/add', (request, response) => {
     console.log(`URL: ${request.url}`);
     console.log(request.body);
@@ -74,10 +69,10 @@ app.post('/schedule/add', (request, response) => {
         response.status(422).send("schedule existed");
     }
 });
+
 app.post('/schedule/addMore', (request, response) => {
     console.log(`URL: ${request.url}`);
     if (Array.isArray(request.body)) {
-        console.log(request.body.length);
         var messages = [];
         for (var i = 0; i < request.body.length; i++) {
             var b = request.body[i];
@@ -103,13 +98,13 @@ app.post('/schedule/addMore', (request, response) => {
         response.status(500).send("body is not a array");
     }
 });
+
 app.post('/schedule/start', (request, response) => {
     console.log(`URL: ${request.url}`);
     if(request.body.length > 0){
         sch.getSchedules(request.body.BroadcastName);
     }
     response.send("force start " + currentDateJob);
-
 });
 
 if (process.env.START_JOB_GET_SCHEDULE.length > 0) {
@@ -119,6 +114,7 @@ if (process.env.START_JOB_GET_SCHEDULE.length > 0) {
     rule.second = 0;
     //getSchedules();
     const job = schedule.scheduleJob("getSchedules", rule, function () {
+        schedules = [];
         sch.getSchedules();
     }, function (e) {
         console.log("get schedules!");

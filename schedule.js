@@ -29,7 +29,6 @@ function getSchedules(scheduleName) {
     }
     console.log("run at: " + currentDate);
     console.log("for date: " + currentDateJob);
-    schedules = [];
     var postData = JSON.stringify({
         model: { BroadcastName: currentDateJob }
     });
