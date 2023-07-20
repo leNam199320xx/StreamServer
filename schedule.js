@@ -140,10 +140,10 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
         fs.mkdirSync(dir);
     }
     var fileId = channel + "_" + videoName + "_" + id;
-    var rs = files.find(function (v) {
+    var rs = files.filter(function (v) {
         return v == fileId;
     });
-    if (rs) {
+    if (rs.length > 0) {
         return null;
     }
     console.log(fileId);
