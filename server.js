@@ -11,7 +11,10 @@ const request = require('request');
 const dateFormater = require('date-and-time')
 
 const config = require('dotenv').config();
-console.log(process.env);
+console.log("PORT=", process.env.PORT);
+console.log("CMS_USE_SSL=", process.env.CMS_USE_SSL);
+console.log("START_JOB_GET_SCHEDULE=", process.env.START_JOB_GET_SCHEDULE);
+console.log("VIDEO_KEEP_DAY=", process.env.VIDEO_KEEP_DAY);
 var schedules = [];
 var currentDateJob = "";
 var files = [];
@@ -102,10 +105,10 @@ app.post('/schedule/start', (request, response) => {
     console.log(`URL: ${request.url}`);
     getSchedules();
     response.send("force start " + request.body.length);
-   
+
 });
 var regOnlyNumber = new RegExp(/[^0-9]/gm);
-if(process.env.START_JOB_GET_SCHEDULE.length >0){
+if (process.env.START_JOB_GET_SCHEDULE.length > 0) {
     const rule = new schedule.RecurrenceRule();
     rule.hour = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[0]);
     rule.minute = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[1]);
