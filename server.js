@@ -169,7 +169,7 @@ function getSchedules() {
         _http = https;
     }
     var request = _http.request(options, (response) => {
-
+        console.log(response.statusCode, response.statusMessage);
         // Set the encoding, so we don't get log to the console a bunch of gibberish binary data
         response.setEncoding('utf8');
         // As data starts streaming in, add each chunk to "data"
