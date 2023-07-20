@@ -11,7 +11,7 @@ const request = require('request');
 const dateFormater = require('date-and-time')
 
 const config = require('dotenv').config();
-console.log(config);
+console.log(process.env);
 var schedules = [];
 var currentDateJob = "";
 var files = [];
@@ -105,19 +105,19 @@ app.post('/schedule/start', (request, response) => {
    
 });
 var regOnlyNumber = new RegExp(/[^0-9]/gm);
-
-const rule = new schedule.RecurrenceRule();
-rule.hour = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[0]);
-rule.minute = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[1]);
-rule.second = 0;
-getSchedules();
-const job = schedule.scheduleJob("getSchedules", rule, function () {
+if(process.env.START_JOB_GET_SCHEDULE.length >0){
+    const rule = new schedule.RecurrenceRule();
+    rule.hour = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[0]);
+    rule.minute = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[1]);
+    rule.second = 0;
     getSchedules();
-}, function (e) {
-    console.log("get schedules!");
-    console.log(e);
-});
-
+    const job = schedule.scheduleJob("getSchedules", rule, function () {
+        getSchedules();
+    }, function (e) {
+        console.log("get schedules!");
+        console.log(e);
+    });
+}
 function deleteFolderOld(channel) {
     var keepFolders = [];
     var dirs = fs.readdirSync('./videos/' + channel);
