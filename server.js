@@ -154,8 +154,8 @@ function getSchedules() {
     });
 
     var options = {
-        hostname: 'localhost',
-        port: 7133,
+        hostname: process.env.CMS_HOST,
+        port: parseInt(process.env.CMS_PORT),
         path: '/api/BroadcastSchedule/GetBroadCastsForJob',
         method: 'POST',
         headers: {
