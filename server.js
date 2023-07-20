@@ -1,15 +1,6 @@
-const http = require('http');
-const https = require('https');
-const fs = require('fs');
-const spawn = require('child_process').spawn;
 const express = require('express');
 const bodyParser = require('body-parser');
 const { join } = require('path');
-const schedule = require('node-schedule');
-const request = require('request');
-const dateFormater = require('date-and-time')
-const config = require('dotenv').config();
-
 const sch = require("./schedule.js");
 
 console.log("PORT=", process.env.PORT);
@@ -20,7 +11,6 @@ console.log("START_JOB_GET_SCHEDULE=", process.env.START_JOB_GET_SCHEDULE);
 console.log("VIDEO_KEEP_DAY=", process.env.VIDEO_KEEP_DAY);
 var schedules = [];
 var currentDateJob = "";
-var files = [];
 console.log(sch);
 
 var id = 0;
@@ -104,20 +94,9 @@ app.post('/schedule/start', (request, response) => {
     if(request.body.length > 0){
         sch.getSchedules(request.body.BroadcastName);
     }
+    else{
+        sch.getSchedules();
+    }
+    schedules = sch.schedules;
     response.send("force start " + currentDateJob);
 });
-
-if (process.env.START_JOB_GET_SCHEDULE.length > 0) {
-    const rule = new schedule.RecurrenceRule();
-    rule.hour = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[0]);
-    rule.minute = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[1]);
-    rule.second = 0;
-    //getSchedules();
-    const job = schedule.scheduleJob("getSchedules", rule, function () {
-        schedules = [];
-        sch.getSchedules();
-    }, function (e) {
-        console.log("get schedules!");
-        console.log(e);
-    });
-}

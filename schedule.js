@@ -1,3 +1,13 @@
+const dateFormater = require('date-and-time');
+const spawn = require('child_process').spawn;
+const http = require('http');
+const https = require('https');
+const fs = require('fs');
+const config = require('dotenv').config();
+const schedule = require('node-schedule');
+var files = [];
+var schedules = [];
+
 function deleteFolderOld(channel) {
     var keepFolders = [];
     var dirs = fs.readdirSync('./videos/' + channel);
@@ -19,7 +29,8 @@ function deleteFolderOld(channel) {
 
 function getSchedules(scheduleName) {
     var data = '';
-    if (scheduleName.length > 0) {
+    schedules = [];
+    if (scheduleName != undefined && scheduleName != null && scheduleName.length > 0) {
         currentDateJob = scheduleName;
     }
     else {
@@ -112,7 +123,6 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
         id,
         channel,
         videoName,
-        schedule,
         date,
         added: false
     };
@@ -197,4 +207,19 @@ function downloadBasic(time, dir, streamPath, videoName) {
     });
 }
 
-module.exports = { downloadBasic, getSchedules, deleteFolderOld, addSchedule };
+
+if (process.env.START_JOB_GET_SCHEDULE.length > 0) {
+    const rule = new schedule.RecurrenceRule();
+    rule.hour = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[0]);
+    rule.minute = parseInt(process.env.START_JOB_GET_SCHEDULE.split(":")[1]);
+    rule.second = 0;
+    const job = schedule.scheduleJob("getSchedules", rule, function () {
+        schedules = [];
+        sch.getSchedules();
+    }, function (e) {
+        console.log("get schedules!");
+        console.log(e);
+    });
+}
+
+module.exports = { downloadBasic, getSchedules, deleteFolderOld, addSchedule, schedules };
