@@ -215,7 +215,7 @@ if (process.env.START_JOB_GET_SCHEDULE.length > 0) {
     rule.second = 0;
     const job = schedule.scheduleJob("getSchedules", rule, function () {
         schedules = [];
-        sch.getSchedules();
+        getSchedules();
     }, function (e) {
         console.log("get schedules!");
         console.log(e);
