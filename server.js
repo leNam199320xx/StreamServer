@@ -42,7 +42,7 @@ app.post('/schedule/add', (request, response) => {
     console.log(`URL: ${request.url}`);
     console.log(request.body);
     id += 1;
-    var sch = sch.addSchedule(
+    var sch2 = sch.addSchedule(
         request.body.id,
         request.body.channel,
         request.body.date,
@@ -50,7 +50,7 @@ app.post('/schedule/add', (request, response) => {
         request.body.streamPath,
         request.body.startDate,
         request.body.endDate);
-    if (sch != null) {
+    if (sch2 != null) {
         schedules.push(request.body.id);
         response.send(sch?.videoName);
     }
