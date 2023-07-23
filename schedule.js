@@ -8,14 +8,16 @@ const schedule = require('node-schedule');
 var files = [];
 var schedules = [];
 
-function deleteFolderOld(channel) {
+function deleteFolderOld(channel, date) {
     var keepFolders = [];
     var dirs = fs.readdirSync('./videos/' + channel);
     var keepDay = process.env.VIDEO_KEEP_DAY;
+    // console.log(channel, date);
     for (var i = 0; i < keepDay; i++) {
-        var rmDate = dateFormater.addDays(new Date(), -i);
+        var _date = dateFormater.parse(date, "YYYYMMDD");
+        var rmDate = dateFormater.addDays(_date, -i);
         var dateStr = dateFormater.format(rmDate, "YYYYMMDD");
-        keepFolders.push(dateStr);
+        keepFolders.push( dateStr);
     }
     for (var i = 0; i < dirs.length; i++) {
         var dir = './videos/' + channel + "/" + dirs[i];
@@ -87,7 +89,7 @@ function getSchedules(scheduleName) {
                         arr[i].streamPath,
                         arr[i].startDate,
                         arr[i].endDate);
-                    deleteFolderOld(arr[i].channel);
+                    deleteFolderOld(arr[i].channel, arr[i].date);
                     schedules.push(arr[i].id);
                 }
             }
