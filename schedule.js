@@ -30,19 +30,21 @@ function deleteFolderOld(channel) {
 function getSchedules(scheduleName) {
     var data = '';
     schedules = [];
-    if (scheduleName != undefined && scheduleName != null && scheduleName.length > 0) {
+    console.log(scheduleName);
+    var currentDate = new Date();
+    if (scheduleName) {
         currentDateJob = scheduleName;
     }
     else {
-        var currentDate = new Date();
         currentDate = dateFormater.addDays(currentDate, 1);
         currentDateJob = dateFormater.format(currentDate, "YYYY-MM-DD");
     }
     console.log("run at: " + currentDate);
     console.log("for date: " + currentDateJob);
-    var postData = JSON.stringify({
-        model: { BroadcastName: currentDateJob }
-    });
+    var postData = JSON.stringify({ BroadcastName: currentDateJob } );
+
+    console.log("post");
+    console.log(postData);
 
     var options = {
         hostname: process.env.CMS_HOST,
@@ -74,6 +76,7 @@ function getSchedules(scheduleName) {
                 return;
             }
             var arr = JSON.parse(data);
+            console.log("length " + arr.length);
             if (arr.length > 0) {
                 for (var i = 0; i < arr.length; i++) {
                     var sch = addSchedule(
@@ -104,6 +107,7 @@ function getSchedules(scheduleName) {
 function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endDateStr) {
     //2019-01-01T00:00:00
     var exist = schedules.filter((e) => { return e == id; }).length > 0;
+    //console.log(exist)
     if (!startDateStr
         || startDateStr == ''
         || !endDateStr
@@ -111,12 +115,14 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
         || exist) {
         return null
     }
+
     var startDate = new Date(startDateStr);
     var endDate = new Date(endDateStr);
     startDate = addMinutes(startDate, 3);
     endDate = addMinutes(endDate, 3);
     //for testing
 
+    //console.log("run: ", startDate);
     var videoName = fileName;
     var timeMs = (endDate - startDate) / 1000;
     var res = {
@@ -140,13 +146,14 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
         fs.mkdirSync(dir);
     }
     var fileId = channel + "_" + videoName + "_" + id;
+    //console.log(fileId);
     var rs = files.filter(function (v) {
         return v == fileId;
     });
     if (rs.length > 0) {
         return null;
     }
-    console.log(fileId);
+    //console.log("run now");
 
     files.push(fileId);
     const job = schedule.scheduleJob(fileId, {

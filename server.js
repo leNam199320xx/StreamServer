@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { join } = require('path');
 const sch = require("./schedule.js");
-
 console.log("PORT=", process.env.PORT);
 console.log("CMS_USE_SSL=", process.env.CMS_USE_SSL);
 console.log("CMS_HOST=", process.env.CMS_HOST);
@@ -18,6 +17,8 @@ var id = 0;
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(express.json())
+
 app.use('/videos', express.static(join(__dirname, 'videos')));
 
 // Start the server 
@@ -41,7 +42,6 @@ app.get('/schedule', (request, response) => {
 app.post('/schedule/add', (request, response) => {
     console.log(`URL: ${request.url}`);
     console.log(request.body);
-    id += 1;
     var sch2 = sch.addSchedule(
         request.body.id,
         request.body.channel,
@@ -60,7 +60,7 @@ app.post('/schedule/add', (request, response) => {
     }
 });
 
-app.post('/schedule/addMore', (request, response) => {
+app.post('/schedule/addMore', bodyParser, (request, response) => {
     console.log(`URL: ${request.url}`);
     if (Array.isArray(request.body)) {
         var messages = [];
@@ -89,9 +89,11 @@ app.post('/schedule/addMore', (request, response) => {
     }
 });
 
-app.post('/schedule/start', (request, response) => {
+app.post('/schedule/start', bodyParser.json(), (request, response) => {
     console.log(`URL: ${request.url}`);
-    if(request.body.length > 0){
+    console.log(request.body);
+    if(request.body.BroadcastName){
+        console.log(request.body.BroadcastName);
         sch.getSchedules(request.body.BroadcastName);
     }
     else{
