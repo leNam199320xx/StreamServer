@@ -138,16 +138,16 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
     // if (!fs.existsSync(join(pathSave, 'videos'))) {
     //     fs.mkdirSync(join(pathSave, 'videos'));
     // }
-    var dirChannel = join(pathSave, 'videos', channel);
-    console.log("check ", dirChannel, !fs.existsSync(dirChannel));
-    if (!fs.existsSync(dirChannel)) {
-        fs.mkdirSync(dirChannel);
-        console.log("create channel path: "+ dirChannel)
-    }
+    // var dirChannel = join(pathSave, 'videos', channel);
+    // console.log("check ", dirChannel, !fs.existsSync(dirChannel));
+    // if (!fs.existsSync(dirChannel)) {
+    //     fs.mkdirSync(dirChannel);
+    //     console.log("create channel path: "+ dirChannel)
+    // }
 
     console.log("check ", dir, !fs.existsSync(dirChannel));
     if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
+        fs.mkdirSync(dir, { recursive: true });
     }
     var fileId = channel + "_" + videoName + "_" + id;
     //console.log(fileId);
