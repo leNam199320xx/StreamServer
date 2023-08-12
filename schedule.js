@@ -3,11 +3,12 @@ const spawn = require('child_process').spawn;
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
+const { join } = require('path');
 const config = require('dotenv').config();
 const schedule = require('node-schedule');
 var files = [];
 var schedules = [];
-
+var __dirname = process.env.PATH_SAVE;
 function deleteFolderOld(channel, date) {
     var keepFolders = [];
     var dirs = fs.readdirSync('./videos/' + channel);
@@ -20,10 +21,9 @@ function deleteFolderOld(channel, date) {
         keepFolders.push( dateStr);
     }
     for (var i = 0; i < dirs.length; i++) {
-        var dir = './videos/' + channel + "/" + dirs[i];
+        var dir = join(__dirname, 'videos', channel, dirs[i]);
         var isKeepDir = keepFolders.filter((e) => { return e == dirs[i]; }).length > 0;
         if (!isKeepDir && fs.existsSync(dir)) {
-            console.log(">>>remove dir: " + dir);
             fs.rmSync(dir, { force: true, recursive: true });
         }
     }
@@ -32,7 +32,6 @@ function deleteFolderOld(channel, date) {
 function getSchedules(scheduleName) {
     var data = '';
     schedules = [];
-    console.log(scheduleName);
     var currentDate = new Date();
     if (scheduleName) {
         currentDateJob = scheduleName;
