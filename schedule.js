@@ -8,7 +8,7 @@ const config = require('dotenv').config();
 const schedule = require('node-schedule');
 var files = [];
 var schedules = [];
-var __dirname = process.env.PATH_SAVE;
+var pathSave = process.env.PATH_SAVE;
 function deleteFolderOld(channel, date) {
     var keepFolders = [];
     var dirs = fs.readdirSync('./videos/' + channel);
@@ -21,7 +21,7 @@ function deleteFolderOld(channel, date) {
         keepFolders.push( dateStr);
     }
     for (var i = 0; i < dirs.length; i++) {
-        var dir = join(__dirname, 'videos', channel, dirs[i]);
+        var dir = join(pathSave, 'videos', channel, dirs[i]);
         var isKeepDir = keepFolders.filter((e) => { return e == dirs[i]; }).length > 0;
         if (!isKeepDir && fs.existsSync(dir)) {
             fs.rmSync(dir, { force: true, recursive: true });
@@ -133,14 +133,14 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
         date,
         added: false
     };
-    var dir = './videos/' + channel + "/" + date;
+    var dir = join(pathSave, 'videos', channel, date);
 
-    if (!fs.existsSync('./videos/')) {
-        fs.mkdirSync('./videos/');
+    if (!fs.existsSync(join(pathSave, 'videos'))) {
+        fs.mkdirSync(join(pathSave, 'videos'));
     }
 
-    if (!fs.existsSync('./videos/' + channel)) {
-        fs.mkdirSync('./videos/' + channel);
+    if (!fs.existsSync(join(pathSave, 'videos', channel))) {
+        fs.mkdirSync(join(pathSave, 'videos', channel));
     }
 
     if (!fs.existsSync(dir)) {

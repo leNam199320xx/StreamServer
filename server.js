@@ -1,4 +1,5 @@
 const express = require('express');
+const dateFormater = require('date-and-time');
 const bodyParser = require('body-parser');
 const { join } = require('path');
 const sch = require("./schedule.js");
@@ -104,3 +105,7 @@ app.post('/schedule/start', bodyParser.json(), (request, response) => {
     schedules = sch.schedules;
     response.send("force start " + currentDateJob);
 });
+
+var currentDate = dateFormater.format(new Date(), "YYYY-MM-DD")
+
+sch.getSchedules(currentDate);
