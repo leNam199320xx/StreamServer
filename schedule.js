@@ -138,9 +138,10 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
     // if (!fs.existsSync(join(pathSave, 'videos'))) {
     //     fs.mkdirSync(join(pathSave, 'videos'));
     // }
-
-    if (!fs.existsSync(join(pathSave, 'videos', channel))) {
-        fs.mkdirSync(join(pathSave, 'videos', channel));
+    var dirChannel = join(pathSave, 'videos', channel);
+    if (!fs.existsSync(dirChannel)) {
+        fs.mkdirSync(dirChannel);
+        console.log("create channel path: "+ dirChannel)
     }
 
     if (!fs.existsSync(dir)) {
