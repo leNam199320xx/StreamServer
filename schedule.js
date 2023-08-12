@@ -145,7 +145,7 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
     //     console.log("create channel path: "+ dirChannel)
     // }
 
-    console.log("check ", dir, !fs.existsSync(dirChannel));
+    console.log("check ", dir, !fs.existsSync(dir));
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
