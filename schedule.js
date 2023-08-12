@@ -11,7 +11,7 @@ var schedules = [];
 var pathSave = process.env.PATH_SAVE;
 function deleteFolderOld(channel, date) {
     var keepFolders = [];
-    var dirs = fs.readdirSync('./videos/' + channel);
+    var dirs = fs.readdirSync(join(pathSave, 'videos', channel));
     var keepDay = process.env.VIDEO_KEEP_DAY;
     // console.log(channel, date);
     for (var i = 0; i < keepDay; i++) {
