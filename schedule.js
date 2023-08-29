@@ -9,6 +9,7 @@ const schedule = require('node-schedule');
 var files = [];
 var schedules = [];
 var pathSave = process.env.PATH_SAVE;
+var diffTime = process.env.DIFF_TIME;
 function deleteFolderOld(channel, date) {
     var keepFolders = [];
     var dirs = fs.readdirSync(join(pathSave, 'videos', channel));
@@ -119,8 +120,8 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
 
     var startDate = new Date(startDateStr);
     var endDate = new Date(endDateStr);
-    startDate = addMinutes(startDate, 3);
-    endDate = addMinutes(endDate, 3);
+    startDate = addMinutes(startDate, diffTime);
+    endDate = addMinutes(endDate, diffTime);
     //for testing
 
     //console.log("run: ", startDate);
