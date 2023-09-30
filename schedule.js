@@ -10,16 +10,19 @@ var files = [];
 var schedules = [];
 var pathSave = process.env.PATH_SAVE;
 var diffTime = process.env.DIFF_TIME;
-function deleteFolderOld(channel, date) {
+function deleteFolderOld(channel, date, keepDay) {
     var keepFolders = [];
     var dirs = fs.readdirSync(join(pathSave, 'videos', channel));
-    var keepDay = process.env.VIDEO_KEEP_DAY;
-    // console.log(channel, date);
+
+    if (!keepDay) {
+        keepDay = process.env.VIDEO_KEEP_DAY;
+    }
+    console.log(channel + " keep " + keepDay + " day");
     for (var i = 0; i < keepDay; i++) {
         var _date = dateFormater.parse(date, "YYYYMMDD");
         var rmDate = dateFormater.addDays(_date, -i);
         var dateStr = dateFormater.format(rmDate, "YYYYMMDD");
-        keepFolders.push( dateStr);
+        keepFolders.push(dateStr);
     }
     for (var i = 0; i < dirs.length; i++) {
         var dir = join(pathSave, 'videos', channel, dirs[i]);
@@ -43,7 +46,7 @@ function getSchedules(scheduleName) {
     }
     console.log("run at: " + currentDate);
     console.log("for date: " + currentDateJob);
-    var postData = JSON.stringify({ BroadcastName: currentDateJob } );
+    var postData = JSON.stringify({ BroadcastName: currentDateJob });
 
     console.log("post");
     console.log(postData);
@@ -65,22 +68,31 @@ function getSchedules(scheduleName) {
     }
     var request = _http.request(options, (response) => {
         console.log(response.statusCode, response.statusMessage);
-        // Set the encoding, so we don't get log to the console a bunch of gibberish binary data
         response.setEncoding('utf8');
-        // As data starts streaming in, add each chunk to "data"
         response.on('data', (chunk) => {
             data += chunk;
         });
-        // The whole response has been received. Print out the result.
         response.on('end', () => {
             // console.log(data);
-            if(data.length == 0){
+            if (data.length == 0) {
                 return;
             }
             var arr = JSON.parse(data);
-            console.log("length " + arr.length);
+            // console.log("length " + arr.length);
+            var chns = [];
             if (arr.length > 0) {
                 for (var i = 0; i < arr.length; i++) {
+                    var isValid = true;
+                    for (var j = 0; j < chns.length; j++) {
+                        if (chns[j] == arr[i].channel) {
+                            isValid = false;
+                            break;
+                        }
+                    }
+                    if (isValid) {
+                        deleteFolderOld(arr[i].channel, arr[i].date, arr[i].keepDay);
+                        chns.push(arr[i].channel);
+                    }
                     var sch = addSchedule(
                         arr[i].id,
                         arr[i].channel,
@@ -89,7 +101,6 @@ function getSchedules(scheduleName) {
                         arr[i].streamPath,
                         arr[i].startDate,
                         arr[i].endDate);
-                    deleteFolderOld(arr[i].channel, arr[i].date);
                     schedules.push(arr[i].id);
                 }
             }
@@ -136,30 +147,16 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
     };
     var dir = join(pathSave, 'videos', channel, date);
 
-    // if (!fs.existsSync(join(pathSave, 'videos'))) {
-    //     fs.mkdirSync(join(pathSave, 'videos'));
-    // }
-    // var dirChannel = join(pathSave, 'videos', channel);
-    // console.log("check ", dirChannel, !fs.existsSync(dirChannel));
-    // if (!fs.existsSync(dirChannel)) {
-    //     fs.mkdirSync(dirChannel);
-    //     console.log("create channel path: "+ dirChannel)
-    // }
-
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
-        console.log("check ", dir, !fs.existsSync(dir));
     }
     var fileId = channel + "_" + videoName + "_" + id;
-    //console.log(fileId);
     var rs = files.filter(function (v) {
         return v == fileId;
     });
     if (rs.length > 0) {
         return null;
     }
-    //console.log("run now");
-
     files.push(fileId);
     const job = schedule.scheduleJob(fileId, {
         start: startDate,
@@ -172,15 +169,14 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
         res.added = true;
         console.log("[" + channel + "] add [" + videoName + "] to schedule successfully ");
     });
-
     return res;
 }
 
 function addMinutes(date, minutes) {
     date.setMinutes(date.getMinutes() + minutes);
-
     return date;
 }
+
 function downloadBasic(time, dir, streamPath, videoName) {
     var cmd = 'ffmpeg';
     var name = dir + "/" + videoName;
