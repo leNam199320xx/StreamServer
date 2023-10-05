@@ -133,7 +133,6 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
     var endDate = new Date(endDateStr);
     startDate = addMinutes(startDate, diffTime);
     endDate = addMinutes(endDate, diffTime);
-    //for testing
 
     //console.log("run: ", startDate);
     var videoName = fileName;
@@ -173,8 +172,8 @@ function addSchedule(id, channel, date, fileName, streamPath, startDateStr, endD
 }
 
 function addMinutes(date, minutes) {
-    date.setMinutes(date.getMinutes() + minutes);
-    return date;
+    var d2 = new Date(date.getTime() + minutes*60000);
+    return d2;
 }
 
 function downloadBasic(time, dir, streamPath, videoName) {
