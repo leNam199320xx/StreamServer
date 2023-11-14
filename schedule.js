@@ -11,8 +11,12 @@ var schedules = [];
 var pathSave = process.env.PATH_SAVE;
 var diffTime = process.env.DIFF_TIME;
 var maxRetry = process.env.MAX_RETRY;
-function deleteFolderOld(channel, date, keepDay) {
+var ip = process.env.IP;
+function deleteFolderOld(channel, date, keepDay, directory) {
     var keepFolders = [];
+    if (directory.length > 0) {
+        pathSave = directory;
+    }
     if (!fs.existsSync(join(pathSave, 'videos', channel))) {
         return;
     }
@@ -50,7 +54,7 @@ function getSchedules(scheduleName) {
     }
     console.log("run at: " + currentDate);
     console.log("for date: " + currentDateJob);
-    var postData = JSON.stringify({ BroadcastName: currentDateJob });
+    var postData = JSON.stringify({ BroadcastName: currentDateJob, IpAddress: ip });
 
     console.log("post");
     console.log(postData);
@@ -58,7 +62,7 @@ function getSchedules(scheduleName) {
     var options = {
         hostname: process.env.CMS_HOST,
         port: parseInt(process.env.CMS_PORT),
-        path: '/api/BroadcastSchedule/GetBroadCastsForJob',
+        path: '/api/BroadcastSchedule/GetBroadCastsForServer',
         method: 'POST',
         headers: {
             'accept': '*/*',
@@ -72,6 +76,9 @@ function getSchedules(scheduleName) {
     }
     var request = _http.request(options, (response) => {
         console.log(response.statusCode, response.statusMessage);
+        if(response.statusCode != 200){
+            return;
+        }
         response.setEncoding('utf8');
         response.on('data', (chunk) => {
             data += chunk;
@@ -93,7 +100,9 @@ function getSchedules(scheduleName) {
                         arr[i].fileName,
                         arr[i].streamPath,
                         arr[i].startDate,
-                        arr[i].endDate);
+                        arr[i].endDate,
+                        arr[i].directory
+                    );
                     schedules.push(arr[i].id);
                 }
 
@@ -106,7 +115,7 @@ function getSchedules(scheduleName) {
                         }
                     }
                     if (isValid) {
-                        deleteFolderOld(arr[i].channel, arr[i].date, arr[i].keepDay);
+                        deleteFolderOld(arr[i].channel, arr[i].date, arr[i].keepDay, arr[i].directory);
                         chns.push(arr[i].channel);
                     }
                 }
@@ -124,7 +133,7 @@ function getSchedules(scheduleName) {
     // End the request
     request.end();
 }
-function addSchedule(id, channel, date, fileName, streamUrl, startDateStr, endDateStr) {
+function addSchedule(id, channel, date, fileName, streamUrl, startDateStr, endDateStr, directory) {
     //2019-01-01T00:00:00
     var exist = schedules.filter((e) => { return e == id; }).length > 0;
     //console.log(exist)
@@ -158,7 +167,10 @@ function addSchedule(id, channel, date, fileName, streamUrl, startDateStr, endDa
         videoName,
         date,
         added: false
-    };
+    }; 
+    if (directory.length > 0) {
+        pathSave = directory;
+    }
     var dir = join(pathSave, 'videos', channel, date);
 
     if (!fs.existsSync(dir)) {
@@ -316,6 +328,16 @@ function execFfmpeg({ dir, videoName, streamUrl, duration, num, onFinish }) {
                     };
                     execFfmpeg(newObj);
                 }, 3000);
+            }
+            else{
+                if (typeof (onFinish) == 'function') {
+                    onFinish({
+                        isMultiFile: num > 0,
+                        textPath: textPath,
+                        fileRootPath: videoRootPath,
+                        numFile: num
+                    });
+                }
             }
         }
         else {

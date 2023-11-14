@@ -10,6 +10,7 @@ console.log("CMS_PORT=", process.env.CMS_PORT);
 console.log("START_JOB_GET_SCHEDULE=", process.env.START_JOB_GET_SCHEDULE);
 console.log("VIDEO_KEEP_DAY=", process.env.VIDEO_KEEP_DAY);
 console.log("PATH_SAVE=", process.env.PATH_SAVE);
+console.log("MAX_RETRY=", process.env.MAX_RETRY);
 var schedules = [];
 var currentDateJob = "";
 // console.log(sch);
@@ -50,7 +51,8 @@ app.post('/schedule/start', bodyParser.json(), (request, response) => {
     schedules = sch.schedules;
     response.send("force start " + currentDateJob);
 });
-
-var currentDate = dateFormater.format(new Date(), "YYYY-MM-DD")
+var d = new Date();
+d = dateFormater.addHours(d, 2)
+var currentDate = dateFormater.format(d, "YYYY-MM-DD");
 
 sch.getSchedules(currentDate);
